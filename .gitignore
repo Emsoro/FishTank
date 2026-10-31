@@ -1,0 +1,17 @@
+# 构建产物（build.ps1 / CMake 随时可以再生成）
+/build/
+/out/
+*.obj
+*.exe
+*.pdb
+*.ilk
+.vs/
+
+# Python 验证脚本的缓存
+__pycache__/
+*.pyc
+
+# 截图：验证时随手拍的，用 tools/*.py 可以重新生成
+/shots/
+/shot*.png
+/verify_*.png
