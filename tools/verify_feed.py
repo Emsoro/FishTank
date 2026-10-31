@@ -83,10 +83,7 @@ def main():
     s.shot("verify_before.png")
 
     x, y = CLICK
-    s.send("Input.dispatchMouseEvent", type="mouseMoved", x=x, y=y, button="none", clickCount=0)
-    s.send("Input.dispatchMouseEvent", type="mousePressed", x=x, y=y, button="left", buttons=1, clickCount=1)
-    time.sleep(0.05)
-    s.send("Input.dispatchMouseEvent", type="mouseReleased", x=x, y=y, button="left", buttons=0, clickCount=1)
+    s.click(x, y)
     print(f"点击 ({x}, {y}) → 投喂点 {before['target']}")
 
     print(f"{'t(s)':>5} {'均距':>6} {'2内':>4} {'最近3条':>18} {'饲料':>4} {'已吃':>4} {'最高y':>7}")

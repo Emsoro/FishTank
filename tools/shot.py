@@ -21,6 +21,15 @@ from websockets.sync.client import connect
 
 PORT = 9222
 
+# 合成事件的 pointerId 不是真实指针，OrbitControls 里 setPointerCapture 会抛异常，先桩掉
+_STUB = ("(function(){const c=document.querySelector('canvas');"
+         "c.setPointerCapture=function(){};c.releasePointerCapture=function(){};return true;})()")
+
+_CLICK = ("(function(){const x=%.2f,y=%.2f,c=document.querySelector('canvas');"
+          "const ev=(t,b)=>c.dispatchEvent(new PointerEvent(t,{pointerId:7,pointerType:'mouse',"
+          "isPrimary:true,bubbles:true,cancelable:true,clientX:x,clientY:y,button:0,buttons:b}));"
+          "ev('pointerdown',1);ev('pointerup',0);return true;})()")
+
 
 def targets():
     with urllib.request.urlopen(f"http://127.0.0.1:{PORT}/json", timeout=5) as r:
@@ -64,15 +73,11 @@ class Session:
         print(f"saved {path}")
 
     def click(self, x, y):
-        # mouseReleased 必须带 clickCount=1，否则 Chrome 不给页面派发 pointerup，
-        # OrbitControls 会卡在拖动状态里（滚轮失灵，鼠标一动镜头还跟着转）
-        self.send("Input.dispatchMouseEvent", type="mouseMoved", x=x, y=y,
-                  button="none", buttons=0, clickCount=0)
-        self.send("Input.dispatchMouseEvent", type="mousePressed", x=x, y=y,
-                  button="left", buttons=1, clickCount=1)
+        # 在页面里直接派发 pointer 事件，不用 CDP 的 Input.dispatchMouseEvent：
+        # 后者会把指针动作送到整个会话里，会把用户正在用的鼠标抢走
+        self.eval(_STUB)
+        self.eval(_CLICK % (x, y))
         time.sleep(0.06)
-        self.send("Input.dispatchMouseEvent", type="mouseReleased", x=x, y=y,
-                  button="left", buttons=0, clickCount=1)
 
 
 def main():

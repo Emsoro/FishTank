@@ -68,11 +68,7 @@ def main():
         s.eval(f"AQ.setView('{v}');")
         i += 1
         if waters and i % 2 == 0:
-            x, y = random.choice(waters)
-            s.send("Input.dispatchMouseEvent", type="mouseMoved", x=x, y=y, button="none", clickCount=0)
-            s.send("Input.dispatchMouseEvent", type="mousePressed", x=x, y=y, button="left", buttons=1, clickCount=1)
-            time.sleep(0.04)
-            s.send("Input.dispatchMouseEvent", type="mouseReleased", x=x, y=y, button="left", buttons=0, clickCount=1)
+            s.click(*random.choice(waters))
         time.sleep(2.0)
 
     st = s.eval("""(function () { const c = AQ.cat, q = AQ.state().snap;
