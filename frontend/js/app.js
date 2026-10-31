@@ -29,7 +29,9 @@
     }
 
     const C = window.Creatures;
-    const SHARK_INDEX = (C.SPECIES || []).findIndex((sp) => sp.shark);
+    // 猫叼不动 / 镜头不跟的大块头（现在是鲨鱼）
+    const BIG_INDEX = new Set((C.SPECIES || [])
+        .map((sp, i) => (sp.shark || sp.big) ? i : -1).filter((i) => i >= 0));
 
     // 像素比压到 1.4：WebView2 里高 DPI 下最吃帧率的就是这块
     I.renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 1.4));
@@ -100,7 +102,7 @@
         if (!snap || !snap.fish.length) return false;
         let pick = null, best = -1, cur = null, curN = -1;
         for (const f of snap.fish) {
-            if (f.s === SHARK_INDEX) continue;
+            if (BIG_INDEX.has(f.s)) continue;
             let n = 0;
             for (const g of snap.fish) {
                 if (Math.hypot(g.x - f.x, g.z - f.z) < 1.3) n++;
@@ -113,9 +115,10 @@
         schoolFocus = pick.id;
         const a = Math.atan2(pick.z, pick.x);
         const tx = -Math.sin(a), tz = Math.cos(a);      // 只沿环切向移动，不会飞到岛上
-        followPreset.target.set(pick.x, -0.06, pick.z);
-        followPreset.pos.set(pick.x + tx * 0.8, 2.05, pick.z + tz * 0.8);
-        followPt.set(pick.x, -0.06, pick.z);
+        // 默认拉高一点、退后一点：一眼能看到整群鱼，又不至于贴到水面上
+        followPreset.target.set(pick.x, -0.05, pick.z);
+        followPreset.pos.set(pick.x + tx * 1.45, 3.30, pick.z + tz * 1.45);
+        followPt.set(pick.x, -0.05, pick.z);
         return true;
     }
 
@@ -124,8 +127,9 @@
         const a = Math.atan2(cat.z, cat.x);
         const ox = Math.cos(a), oz = Math.sin(a);       // 径向外侧（海面方向）
         const y = cat.ground(cat.x, cat.z);
-        followPreset.target.set(cat.x, y + 0.16, cat.z);
-        followPreset.pos.set(cat.x + ox * 1.62, y + 1.72, cat.z + oz * 1.62);
+        // 同样拉高拉远：猫在画面里占个中等身位，周围的小岛也带得进来
+        followPreset.target.set(cat.x, y + 0.18, cat.z);
+        followPreset.pos.set(cat.x + ox * 2.35, y + 2.85, cat.z + oz * 2.35);
         const pr = Math.hypot(followPreset.pos.x, followPreset.pos.z);
         if (pr > 9.2) {
             // 别把相机伸到水体外面，退到内一点
@@ -133,7 +137,7 @@
             followPreset.pos.x *= k;
             followPreset.pos.z *= k;
         }
-        followPt.set(cat.x, y + 0.16, cat.z);
+        followPt.set(cat.x, y + 0.18, cat.z);
         return true;
     }
 

@@ -119,8 +119,33 @@ box(-.94,3.07,-.55,.30,.9,.32,'#a47559',house);box(-.94,3.55,-.55,.42,.10,.42,'#
 beam([1.24,3.0,0],[1.24,3.95,0],.02,'#59675e',house);beam([.9,3.78,0],[1.56,3.78,0],.018,'#59675e',house);beam([1.24,3.95,0],[1.24,4.16,0],.025,C.woodDark,house);leaf([.96,4.06,0],[1.53,4.06,0],.13,'#c78554',house);
 // Engawa veranda and the little things left behind.
 for(let i=0;i<18;i++)box(-1.7+i*.2,.22,1.88,.184,.11,1.09,pick([C.wood,C.woodLight,'#ae8053']),house);
-for(let x of [-1.6,1.6])for(let z of [1.48,2.25])beam([x,-.45,z],[x,.25,z],.065,C.woodDark,house);
-for(let i=0;i<3;i++)box(0,.14-i*.11,2.55+i*.21,1.0,.14,.24,C.woodLight,house);
+// 石砌台基：屋子坐在坡上，西/北侧地势低（局部地面最低到 -1.23），垫两层石台才不悬空
+box(0,-.325,.25,3.66,.75,3.22,C.stone,house);
+box(0,-.975,.25,3.30,.85,2.88,'#6f887c',house,false);
+// 缘侧支柱：一直插到沙里（短柱在低处会悬空半米）
+const houseGround=(lx,lz)=>height(hx+lx,hz+lz)-hy;
+for(let x of [-1.6,1.6])for(let z of [1.48,2.25])beam([x,Math.min(-.45,houseGround(x,z)-.04),z],[x,.25,z],.065,C.woodDark,house);
+// 木楼梯：台阶数按地形高度算，最后一级直接坐进坡里，两侧再封一道斜梁
+{
+ const deckTop=.275,z0=2.44,tread=.20,rise=.135,halfW=.52;
+ let landTop=deckTop,landBot=deckTop,zEnd=z0;
+ for(let i=0;i<10;i++){
+  const zc=z0+tread*(i+.5),top=deckTop-rise*(i+1);
+  const gb=Math.min(houseGround(-halfW,zc),houseGround(halfW,zc),houseGround(0,zc));
+  zEnd=z0+tread*(i+1);
+  if(top-rise<=gb+.30||i===9){          // 差半步就到地面：收尾一级做深，埋进坡里
+   landTop=top;landBot=Math.min(top-rise,gb-.10);
+   box(0,(top+landBot)/2,zc,1.04,top-landBot,tread,C.wood,house);
+   break;
+  }
+  box(0,top-rise/2,zc,1.04,rise,tread,i%2?C.wood:C.woodLight,house);
+ }
+ for(const sx of [-1,1]){               // 斜梁：从甲板边一直搭到坡里，托住整段楼梯
+  const p0={y:deckTop-.06,z:z0-.06},p1={y:landBot-.05,z:zEnd+.16};
+  const s=box(sx*(halfW+.02),(p0.y+p1.y)/2,(p0.z+p1.z)/2,.075,.11,Math.hypot(p1.z-p0.z,p0.y-p1.y)+.04,C.woodDark,house,false);
+  s.rotation.x=Math.atan2(p0.y-p1.y,p1.z-p0.z);
+ }
+}
 function crate(x,y,z,s=.43,p=root){box(x,y+s/2,z,s,s,s,C.woodLight,p);for(let i=0;i<4;i++)box(x,y+.05+i*s*.25,z+s/2+.008,s,.016,.022,C.wood,p,false);for(let v of [-1,1])box(x+v*s*.39,y+s/2,z+s/2+.02,.047,s,.035,C.woodDark,p);beam([x-s*.39,y+.04,z+s/2+.04],[x+s*.39,y+s-.04,z+s/2+.04],.021,C.woodDark,p)}
 crate(-1.24,.3,1.89,.40,house);crate(-1.20,.70,1.89,.31,house);
 function lifeRing(x,y,z,r=.22,p=root){torus(x,y,z,r,r*.24,'#f6e9cc',p);for(let i=0;i<4;i++){let a=i*Math.PI/2;let o=box(x+Math.cos(a)*r,y+Math.sin(a)*r,z,.13,.11,.11,C.coral,p,false);o.rotation.z=a}}

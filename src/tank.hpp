@@ -45,6 +45,7 @@ enum Species {
     kGoby,       // 虾虎鱼：贴底
     kFlame,      // 火焰鱼：通体橙红，环海里最显眼的那几条
     kShark,      // 礁鲨：不群游、不吃饲料，只沿外圈慢慢巡游
+    kGrouper,    // 石斑：贴底独居的大块头，慢慢蹭
     kSpeciesCount
 };
 
@@ -68,6 +69,9 @@ struct SpeciesTraits {
 };
 
 const SpeciesTraits& Traits(int species);
+
+/// 猫能不能把这条鱼叼走（大块头捞不动：目前只有鲨鱼）
+inline bool Catchable(int species) { return !Traits(species).predator; }
 
 struct Fish {
     int id = 0;

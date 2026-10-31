@@ -34,7 +34,8 @@ inline float Clampf(float v, float lo, float hi) { return v < lo ? lo : (v > hi 
 
 inline float Round3(float v) { return std::round(v * 1000.0f) / 1000.0f; }
 
-// 与 island.js 中的鱼种顺序一致（体长按展缸比例缩到 0.20~0.28；最后一列是“是否鲨鱼”）
+// 与 island.js / creatures.js 中的鱼种顺序一致（体长按展缸比例缩到 0.20~0.28；
+// 最后一列是“是否鲨鱼”）
 const SpeciesTraits kTraits[kSpeciesCount] = {
     {"neon",    "霓虹灯鱼", 0.55f, 0.23f, 1.00f, -0.045f, 0.20f, 0},
     {"guppy",   "孔雀鱼",   0.46f, 0.25f, 0.30f, -0.020f, 0.20f, 0},
@@ -45,6 +46,7 @@ const SpeciesTraits kTraits[kSpeciesCount] = {
     {"goby",    "虾虎鱼",   0.30f, 0.21f, 0.20f, -0.115f, 0.20f, 0},
     {"flame",   "火焰鱼",   0.50f, 0.26f, 0.40f, -0.030f, 0.20f, 0},
     {"shark",   "礁鲨",     0.42f, 1.05f, 0.00f, -0.055f, 0.42f, 1},
+    {"grouper", "石斑",     0.30f, 0.46f, 0.05f, -0.118f, 0.26f, 0},
 };
 
 /// 鱼嘴到鱼心的距离（用于判定“吃到”）
@@ -162,6 +164,7 @@ void Tank::Populate() {
     // 越靠水面越热闹：光鳃鱼 / 霓虹灯在上层成群，小丑鱼与虾虎鱼在下面
     switch (stock_) {
         case 0:
+            SpawnFish(kGrouper, 1, 0.42f, 0.5f);
             SpawnFish(kChromis, 8, 0.55f, 0.5f);
             SpawnFish(kNeon, 8, 0.70f, 0.6f);
             SpawnFish(kFlame, 2, 0.65f, 0.5f);
@@ -176,6 +179,7 @@ void Tank::Populate() {
             SpawnFish(kClown, 6, 0.45f, 0.5f);
             SpawnFish(kGoby, 5, 0.50f, 0.5f);
             SpawnFish(kCory, 3, 0.55f, 0.5f);
+            SpawnFish(kGrouper, 3, 0.42f, 0.6f);
             break;
         default:
             SpawnFish(kChromis, 14, 0.55f, 0.7f);
@@ -185,6 +189,7 @@ void Tank::Populate() {
             SpawnFish(kClown, 4, 0.45f, 0.5f);
             SpawnFish(kGoby, 3, 0.50f, 0.4f);
             SpawnFish(kCory, 2, 0.55f, 0.4f);
+            SpawnFish(kGrouper, 2, 0.42f, 0.5f);
             break;
     }
 
@@ -201,7 +206,7 @@ nlohmann::json Tank::CatchFish(int id) {
     for (int i = 0; i < static_cast<int>(fish_.size()); ++i) {
         const Fish& f = fish_[i];
         if (f.id != id) continue;
-        if (Traits(f.species).predator) return nlohmann::json{{"ok", false}};  // 鲨鱼捞不动
+        if (!Catchable(f.species)) return nlohmann::json{{"ok", false}};  // 鲨鱼捞不动
 
         const int species = f.species;
         const float size = f.size;

@@ -12,7 +12,8 @@
     const T = THREE;
     const grad = window.Creatures.gradient;
     const SPECIES = window.Creatures.SPECIES;
-    const SHARK = SPECIES.findIndex((s) => s.shark);
+    // 猫叼不动的大家伙（现在是鲨鱼），蹲点与下爪时都跳过
+    const BIG = new Set(SPECIES.map((s, i) => (s.shark || s.big) ? i : -1).filter((i) => i >= 0));
 
     // 展缸比例：屋子宽 3.05 单位 ≈ 现实 4 米，所以 1 单位 ≈ 1.3 米
     // 一只猫的肩高 0.186、体长 0.45 刚好落在“看着像一只猫”的范围里
@@ -26,12 +27,13 @@
     // rot 是道具自己在 island.js 里的 rotation.y，斜着摆的东西要转到自己坐标系里算
     const BLOCKS = [
         { box: true, x: -1.65, z: -0.60, hw: 1.95, hd: 2.15 },
+        { box: true, x: -1.65, z: 2.69, hw: 0.64, hd: 0.95 },   // 屋前木楼梯（实心的，别踩进去）
         { box: false, x: 4.04, z: -2.43, r: 1.25 },
         { box: false, x: 0.75, z: 5.16, r: 1.20 },
         { box: true, x: -3.70, z: 6.16, hw: 0.72, hd: 1.86, rot: -0.10 },
         { box: true, x: -4.10, z: 0.55, hw: 0.56, hd: 0.56, rot: 0.24 },
     ];
-    const DOOR = { x: -1.65, z: 2.02 };   // 门前廊下的一块地（找不到院子时的兜底点）
+    const DOOR = { x: -0.72, z: 2.35 };   // 门前廊下的一块地（楼梯右边，找不到院子时的兜底点）
     const HOME = { x: -3.30, z: 2.30 };   // 屋侧休息点（同上，兜底用）
     const HOUSE = { x: -1.65, z: -0.60 }; // 屋子中心：吃饭的地点在它靠海那一侧随机挑
 
@@ -474,7 +476,7 @@
             if (!list || !list.length) return null;
             let best = null, bs = 1e9;
             for (const f of list) {
-                if (f.s === SHARK) continue;
+                if (BIG.has(f.s)) continue;
                 const a = Math.atan2(f.z, f.x);
                 const p = this.shorePoint(a);
                 let s = this.distTo(p) + Math.hypot(p.x - f.x, p.z - f.z) * 1.5;
@@ -487,7 +489,7 @@
         pickPrey(fish) {
             let best = null, bd = 1e9;
             for (const f of fish) {
-                if (f.s === SHARK) continue;
+                if (BIG.has(f.s)) continue;
                 const d = Math.hypot(f.x - this.x, f.z - this.z);
                 if (d < bd) { bd = d; best = f; }
             }

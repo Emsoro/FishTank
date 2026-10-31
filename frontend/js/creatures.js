@@ -167,10 +167,31 @@
                 g.fillRect(0, H * 0.44, W, H * 0.05);
             },
         },
+        {
+            key: 'grouper', name: '石斑', L: 0.80, H: 0.30, W: 1.05, S: 1.9,
+            fin: '#8a7f5c', tail: '#9c8f66', spread: 0.50, len: 0.34, grouper: true,
+            paint(g, W, H) {
+                const grd = g.createLinearGradient(0, 0, 0, H);
+                grd.addColorStop(0.00, '#4a4a2e');
+                grd.addColorStop(0.40, '#7a7448');
+                grd.addColorStop(0.72, '#b3a678');
+                grd.addColorStop(1.00, '#e2d6ae');
+                g.fillStyle = grd; g.fillRect(0, 0, W, H);
+                for (let i = 0; i < 30; i++) {          // 石斑的深浅斑点
+                    const x = ((i * 43) % 100) / 100, y = ((i * 29) % 92) / 100;
+                    g.fillStyle = i % 3 ? 'rgba(46,44,26,.42)' : 'rgba(240,236,214,.45)';
+                    g.beginPath();
+                    g.ellipse(W * x, H * y, H * (0.05 + (i % 4) * 0.018), H * (0.04 + (i % 3) * 0.014), i, 0, 7);
+                    g.fill();
+                }
+                g.fillStyle = 'rgba(255,255,255,.22)'; g.fillRect(0, H * 0.60, W, H * 0.05);
+            },
+        },
     ];
 
     // 眼睛（贴在身体贴图的两侧：v=0.25 与 0.75 才是左右侧面）
     function paintEyes(g, W, H, at) {
+        // at 由每种鱼的 eye 字段给（海豚眼睛靠后，魔鬼鱼贴着前缘）
         for (const v of [0.25, 0.75]) {
             const x = W * at, y = H * v, r = H * 0.085;
             g.fillStyle = '#101d1c';
@@ -186,7 +207,7 @@
         cv.width = W; cv.height = H;
         const g = cv.getContext('2d');
         sp.paint(g, W, H);
-        paintEyes(g, W, H, 0.86);
+        paintEyes(g, W, H, sp.eye || 0.86);
         const tex = new T.CanvasTexture(cv);
         tex.colorSpace = T.SRGBColorSpace;
         tex.flipY = false;          // canvas 顶 = 鱼背
@@ -213,6 +234,13 @@
         [0.00, 0.040], [0.06, 0.075], [0.14, 0.108], [0.24, 0.130],
         [0.36, 0.142], [0.48, 0.145], [0.60, 0.140], [0.72, 0.125],
         [0.82, 0.102], [0.90, 0.074], [0.96, 0.042], [1.00, 0.012],
+    ];
+
+    // 石斑：头大身沉，越往尾巴越细
+    const GROUPER_PROFILE = [
+        [0.00, 0.055], [0.08, 0.098], [0.18, 0.150], [0.30, 0.205],
+        [0.44, 0.248], [0.58, 0.272], [0.70, 0.268], [0.82, 0.240],
+        [0.92, 0.185], [0.97, 0.120], [1.00, 0.055],
     ];
 
     function catmull(p0, p1, p2, p3, t) {
@@ -242,6 +270,14 @@
 
     const fishProfile = makeProfile(FISH_PROFILE);
     const sharkProfile = makeProfile(SHARK_PROFILE);
+    const grouperProfile = makeProfile(GROUPER_PROFILE);
+
+    /// 每种鱼用自己的截面表 / 截面宽度（宽度系数越大身体越“横”）
+    function profileOf(sp) {
+        if (sp.grouper) return grouperProfile;
+        return sp.shark ? sharkProfile : fishProfile;
+    }
+    function widthOf(sp) { return sp.shark ? 0.72 : 0.60; }
 
     function buildBody(prof, widthK = 0.60) {
         const SEG = 22, RING = 12, R1 = RING + 1;
@@ -403,7 +439,7 @@
             this.list = [];
             this.phase = new Float32Array(CAP);
 
-            const bodyGeo = buildBody(sp.shark ? sharkProfile : fishProfile, sp.shark ? 0.72 : 0.60);
+            const bodyGeo = buildBody(profileOf(sp), widthOf(sp));
             bodyGeo.setAttribute('aPhase', new T.InstancedBufferAttribute(this.phase, 1));
 
             const bodyMat = new T.MeshToonMaterial({ map: texture(sp), gradientMap: grad });

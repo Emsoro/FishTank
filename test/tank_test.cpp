@@ -302,10 +302,10 @@ void TestCatCatchFish() {
     t.Reset(555u);
     const int before = static_cast<int>(t.fishes().size());
 
-    // 挑一条普通鱼（不是鲨鱼）
+    // 挑一条猫叼得动的鱼（鲨鱼 / 海豚 / 魔鬼鱼都不行）
     int preyId = 0;
     for (const auto& f : t.fishes()) {
-        if (f.species != tank::kShark) { preyId = f.id; break; }
+        if (tank::Catchable(f.species)) { preyId = f.id; break; }
     }
     Check(preyId != 0, "能找到一条可抓的鱼");
 
@@ -336,6 +336,30 @@ void TestCatCatchFish() {
     Check(t.caught() == 1, "补鱼不影响 caught 计数");
 }
 
+void TestGrouperAndNoJumping() {
+    tank::Tank t;
+    t.Reset(2026u);
+
+    int groupers = 0;
+    for (const auto& f : t.fishes()) if (f.species == tank::kGrouper) ++groupers;
+    Check(groupers > 0, Fmt("环海里应该有石斑，实际 %d", groupers));
+
+    // 石斑是正经的鱼，猫叼得走；它是贴底的，别跑到水面上层去
+    Check(tank::Catchable(tank::kGrouper), "石斑应该可以被猫叼走");
+    Check(!tank::Catchable(tank::kShark), "鲨鱼不该被猫叼走");
+
+    float top = -9.0f;
+    for (int step = 0; step < 1200; ++step) {   // 60 秒
+        t.Step(0.05f);
+        for (const auto& f : t.fishes()) {
+            top = std::fmax(top, f.y);
+            Check(InsideRing(f, 0.05f), Fmt("鱼始终在环海里 (%.2f, %.2f)", f.x, f.z));
+        }
+    }
+    Check(top <= tank::kSwimHigh + 1e-3f,
+          Fmt("没有鱼会跃出水面，最高 y=%.3f（水层上限 %.3f）", top, tank::kSwimHigh));
+}
+
 }  // namespace
 
 int main() {
@@ -353,6 +377,7 @@ int main() {
     TestSnapshotShape();
     TestPauseIsHandledByHost();
     TestSharkAndRedFish();
+    TestGrouperAndNoJumping();
     TestCatCatchFish();
 
     std::printf("== %d 项检查，%d 项失败 ==\n", g_checks, g_failures);
